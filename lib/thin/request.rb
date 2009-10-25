@@ -49,7 +49,10 @@ module Thin
       @parser   = Thin::HttpParser.new
       @data     = ''
       @nparsed  = 0
-      @body     = StringIO.new
+      body      = ''
+      # For Rack::Lint on 1.9, ensure that the encoding is always for spec
+      body.force_encoding('ASCII-8BIT') if body.respond_to?(:force_encoding)
+      @body     = StringIO.new(body)
       @env      = {
         SERVER_SOFTWARE   => SERVER,
         SERVER_NAME       => LOCALHOST,
