@@ -91,8 +91,8 @@ module Thin
         # connection can treat this body as async (and not terminate the
         # connection prematurely)
         @body = EM::FileStreamer.new(connection, @body.to_path)
-      when Rack::Chunked === @body && b = @body.instance_variable_get(:@body) && b.respond_to?(:to_path)
-        @body = EM::FileStreamer.new(connection, b.to_path, :http_chunks => true)
+      # when connection && Rack::Chunked === @body && b = @body.instance_variable_get(:@body) && b.respond_to?(:to_path)
+      #   @body = EM::FileStreamer.new(connection, b.to_path, :http_chunks => true)
       else
         @body.each { |chunk| yield chunk }
       end
