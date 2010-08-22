@@ -78,10 +78,21 @@ module Thin
     # Yields each chunk of the response.
     # To control the size of each chunk
     # define your own +each+ method on +body+.
-    def each
+    # In order to stream files efficiently, 
+    # pass in a connection that resembles an
+    # EM::Connection object.
+    def each(connection = nil)
       yield head
-      if @body.is_a?(String)
+      case
+      when String === @body
         yield @body
+      when @body.respond_to?(:to_path) && connection
+        # We use this hack as FileStreamer is a deferrable, then the
+        # connection can treat this body as async (and not terminate the
+        # connection prematurely)
+        @body = EM::FileStreamer.new(connection, @body.to_path)
+      when Rack::Chunked === @body && b = @body.instance_variable_get(:@body) && b.respond_to?(:to_path)
+        @body = EM::FileStreamer.new(connection, b.to_path, :http_chunks => true)
       else
         @body.each { |chunk| yield chunk }
       end

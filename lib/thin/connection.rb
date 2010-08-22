@@ -100,7 +100,7 @@ module Thin
       @response.persistent! if @request.persistent?
 
       # Send the response
-      @response.each do |chunk|
+      @response.each(self) do |chunk|
         trace { chunk }
         send_data chunk
       end
