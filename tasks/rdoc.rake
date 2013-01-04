@@ -1,8 +1,8 @@
-require 'rake/rdoctask'
+require 'rdoc/task'
 
 CLEAN.include %w(doc/rdoc)
 
-Rake::RDocTask.new do |rdoc|
+RDoc::Task.new do |rdoc|
   rdoc.rdoc_dir = 'doc/rdoc'
   rdoc.options += ['--quiet', '--title', Thin::NAME,
              	     "--opname", "index.html",
