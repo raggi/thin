@@ -64,6 +64,9 @@ module Thin
       # callback is no longer referenced, so be tidy!
       @request.async_callback = method(:post_process)
 
+      @request.env['rack.hijack?'] = true
+      @request.env['rack.hijack'] = method(:hijack)
+
       if @backend.ssl?
         @request.env["rack.url_scheme"] = "https"
 
@@ -87,7 +90,19 @@ module Thin
       can_persist? && @request.persistent? ? Response::PERSISTENT_ERROR : Response::ERROR
     end
 
+    def hijack
+      request.env['rack.hijack_io'] ||=
+        begin
+          # XXX there is a shutdown bug here due to the simplicity of this,
+          # where hijacked connections are not part of the graceful shutdown
+          # open socket counter. There's no quick and easy solution.
+          @backend.connection_finished(self)
+          IO.for_fd detach
+        end
+    end
+
     def post_process(result)
+      return if @request.env['rack.hijack_io']
       return unless result
       result = result.to_a
 
