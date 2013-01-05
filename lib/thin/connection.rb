@@ -109,7 +109,22 @@ module Thin
       # Status code -1 indicates that we're going to respond later (async).
       return if result.first == AsyncResponse.first
 
+      # XXX delete is not actually part of the Rack SPEC...
+      hijacking_callback = result[1].delete 'rack.hijack'
+
       @response.status, @response.headers, @response.body = *result
+
+      if hijacking_callback
+        top = @response.head
+        trace { top }
+        send_data top
+        if EM.reactor_running?
+          EM.next_tick { hijacking_callback.call hijack }
+        else
+          hijacking_callback.call hijack
+        end
+        return
+      end
 
       log "!! Rack application returned nil body. Probably you wanted it to be an empty string?" if @response.body.nil?
 
